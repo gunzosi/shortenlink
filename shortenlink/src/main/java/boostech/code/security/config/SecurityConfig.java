@@ -52,6 +52,7 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
                     .requestMatchers("/api/v1/auth/signup", "/api/v1/auth/signin").permitAll()
                     .requestMatchers("/api/test/all").permitAll()
                     .requestMatchers("/api/test/admin").hasRole("ADMIN")
+                    .requestMatchers("/**").permitAll()
                     .anyRequest().authenticated()
             );
 
