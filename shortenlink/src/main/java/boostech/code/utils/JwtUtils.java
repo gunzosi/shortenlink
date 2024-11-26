@@ -7,7 +7,7 @@ import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.security.Keys;
-import io.jsonwebtoken.security.Keys;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.Authentication;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +20,9 @@ import io.jsonwebtoken.Jwts;
 import java.security.Key;
 import java.util.Base64;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import io.jsonwebtoken.security.Keys; // Thêm import cho Keys
 
@@ -37,22 +40,33 @@ public class JwtUtils {
     public String generateJwtToken(Authentication authentication) {
         UserDetailsImpl userPrincipal = (UserDetailsImpl) authentication.getPrincipal();
 
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("roles", userPrincipal.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList()));
+        claims.put("email", userPrincipal.getEmail());
+
         return Jwts.builder()
-                .setSubject((userPrincipal.getUsername()))
+                .setSubject(userPrincipal.getUsername())
+                .setClaims(claims)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date((new Date()).getTime() + jwtExpirationMs))
-                .signWith(secretKey(), SignatureAlgorithm.HS256)
+                .signWith(SignatureAlgorithm.HS256, jwtSecret)
                 .compact();
     }
 
+
     private Key secretKey() {
-        byte[] keyBytes = Base64.getDecoder().decode(jwtSecret);
-
-        if (keyBytes.length < 32) {
-            return Keys.secretKeyFor(SignatureAlgorithm.HS256);
+        try {
+            byte[] keyBytes = Base64.getDecoder().decode(jwtSecret);
+            if (keyBytes.length < 32) {
+                throw new IllegalArgumentException("JWT secret key must be at least 32 bytes long");
+            }
+            return Keys.hmacShaKeyFor(keyBytes);
+        } catch (IllegalArgumentException e) {
+            logger.error("Invalid JWT secret key: {}", e.getMessage());
+            throw e;
         }
-
-        return Keys.hmacShaKeyFor(keyBytes);
     }
 
     public long getExpirationTime() {

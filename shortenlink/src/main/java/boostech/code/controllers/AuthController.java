@@ -124,26 +124,7 @@ public class AuthController {
                                 .body(new MessageResponse("Registration failed: " + e.getMessage()));
                 }
         }
-//        @PostMapping("/signin")
-//        public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
-//                Authentication authentication = authenticationManager.authenticate(
-//                        new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword())
-//                );
-//
-//                SecurityContextHolder.getContext().setAuthentication(authentication);
-//                String jwt = jwtUtils.generateJwtToken(authentication);
-//
-//                UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-//                List<String> roles = userDetails.getAuthorities().stream()
-//                        .map(GrantedAuthority::getAuthority)
-//                        .collect(Collectors.toList());
-//
-//                return ResponseEntity.ok(new JwtResponse(jwt ,
-//                        userDetails.getId(),
-//                        userDetails.getEmail(),
-//                        userDetails.getUsername(),
-//                        roles));
-//        }
+
         @PostMapping("/signin")
         public ResponseEntity<JwtResponse> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
                 Authentication authentication = authenticationManager.authenticate(

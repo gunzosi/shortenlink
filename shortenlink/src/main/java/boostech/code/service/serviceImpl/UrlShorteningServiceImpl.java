@@ -128,7 +128,7 @@ public class UrlShorteningServiceImpl implements UrlShorteningService {
 
         // Tìm và xóa URL
         UrlShortening urlShortening = urlShorteningRepository.findByUrlCodeAndUser_Id(urlCode, currentUserId)
-                .orElseThrow(() -> new UnauthorizedAccessException("URL not found or not authorized"));
+                .orElseThrow(() -> new UnauthorizedAccessException("URL isn't found or not authorized"));
 
         urlShorteningRepository.delete(urlShortening);
         logger.info("URL deleted successfully for user: {}", currentUserId);
