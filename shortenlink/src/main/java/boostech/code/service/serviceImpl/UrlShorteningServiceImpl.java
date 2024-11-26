@@ -2,7 +2,9 @@ package boostech.code.service.serviceImpl;
 
 import boostech.code.component.AuthenticationFacade;
 import boostech.code.exception.ResourceNotFoundException;
+import boostech.code.exception.UnauthorizedAccessException;
 import boostech.code.models.UrlShortening;
+import boostech.code.models.User;
 import boostech.code.payload.request.UrlRequest;
 import boostech.code.payload.request.UrlRequestUpdate;
 import boostech.code.payload.response.UrlResponse;
@@ -43,20 +45,27 @@ public class UrlShorteningServiceImpl implements UrlShorteningService {
 
     @Override
     public UrlResponse shortenUrl(UrlRequest urlRequest) {
-        // Take the URL from the request
+
+        // Take the current user
+        UserDetailsImpl userDetails = authenticationFacade.getCurrentUser();
+        User currentUser = userRepository
+                .findById(userDetails.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         String urlCode = generateUrlCode();
-
         while (urlShorteningRepository.existsByShortUrl(localUrl + urlCode)) {
             urlCode = generateUrlCode();
         }
 
+        // Take the URL from the request
         String urlController = urlControllerDevelop + urlCode;
 
         UrlShortening urlShortening = new UrlShortening();
         urlShortening.setLongUrl(urlRequest.getLongUrl());
         urlShortening.setShortUrl(localUrl + urlCode);
         urlShortening.setUrlCode(urlCode);
+        urlShortening.setUser(currentUser);
+
         urlShorteningRepository.save(urlShortening);
 
         return new UrlResponse("Success", urlShortening.getShortUrl(), urlController);
@@ -113,13 +122,16 @@ public class UrlShorteningServiceImpl implements UrlShorteningService {
 
 
     @Override
+    @Transactional
     public void deleteUrl(String urlCode) {
-        urlShorteningRepository.findByShortUrl(localUrl + urlCode)
-                .ifPresent(urlShorteningRepository::delete);
+        Long currentUserId = authenticationFacade.getCurrentUserId();
 
-        System.out.println("URL deleted successfully");
+        // Tìm và xóa URL
+        UrlShortening urlShortening = urlShorteningRepository.findByUrlCodeAndUser_Id(urlCode, currentUserId)
+                .orElseThrow(() -> new UnauthorizedAccessException("URL not found or not authorized"));
 
-        logger.info("URL deleted successfully -- CASCADE DELETE on ClickEvent");
+        urlShorteningRepository.delete(urlShortening);
+        logger.info("URL deleted successfully for user: {}", currentUserId);
     }
 
     @Override
@@ -130,7 +142,9 @@ public class UrlShorteningServiceImpl implements UrlShorteningService {
 
     @Override
     public UrlResponse getAllUrls() {
-        List<UrlShortening> urlShortenings = urlShorteningRepository.findAll();
+        Long currentUserId = authenticationFacade.getCurrentUserId();
+
+        List<UrlShortening> urlShortenings = urlShorteningRepository.findByUser_Id(currentUserId);
 
         if (urlShortenings.isEmpty()) {
             return new UrlResponse("Error", "No URLs found", (List<?>) null);
@@ -223,27 +237,34 @@ public class UrlShorteningServiceImpl implements UrlShorteningService {
 
 
     @Override
-    public UrlResponse updateUrlCode(String oldUrlCode, UrlRequestUpdate urlRequestUpdate) {
-        UrlShortening urlShortening = urlShorteningRepository.findByUrlCode(oldUrlCode)
-                .orElseThrow(() -> new ResourceNotFoundException("@Service - URL isn't found with code: " + oldUrlCode));
+    @Transactional
+    public UrlResponse updateUrlCode(String urlCode, UrlRequestUpdate urlRequest) {
 
-        String newUrlCode = urlRequestUpdate.getCustomUrlCode();
+        Long currentUserId = authenticationFacade.getCurrentUserId();
 
+
+        UrlShortening urlShortening = urlShorteningRepository.findByUrlCodeAndUser_Id(urlCode, currentUserId)
+                .orElseThrow(() -> new UnauthorizedAccessException("URL not found or not authorized"));
+
+
+        String newUrlCode = urlRequest.getCustomUrlCode();
         Optional<UrlShortening> existingUrl = urlShorteningRepository.findByUrlCode(newUrlCode);
+
         if (existingUrl.isPresent() && !existingUrl.get().getId().equals(urlShortening.getId())) {
-            return new UrlResponse("Error", "@Service - Custom URL code already exists", (List<?>) null);
+            return new UrlResponse("Error", "Custom URL code already exists", (List<?>) null);
         }
 
-        if(isValidUrlCode(newUrlCode)){
-            return new UrlResponse("Error", "@Service - Custom URL code can only contain letters, numbers, and hyphens", (List<?>) null);
-        }
 
         urlShortening.setUrlCode(newUrlCode);
         urlShortening.setShortUrl(localUrl + newUrlCode);
 
         UrlShortening updatedUrl = urlShorteningRepository.save(urlShortening);
 
-        return new UrlResponse("Success", "@Service - URL code updated successfully", Collections.singletonList(updatedUrl));
+        return new UrlResponse(
+                "Success",
+                "URL code updated successfully",
+                Collections.singletonList(updatedUrl)
+        );
     }
 
 

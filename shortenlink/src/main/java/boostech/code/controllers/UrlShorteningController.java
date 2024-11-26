@@ -88,8 +88,6 @@ public class UrlShorteningController {
         return ResponseEntity.ok(new UrlResponse("Success", "URL and related click events deleted successfully", (List<?>) null));
     }
 
-
-
     @RequestMapping(value = "/**", method = RequestMethod.OPTIONS)
     public ResponseEntity<?> options() {
         return ResponseEntity.ok().build();
