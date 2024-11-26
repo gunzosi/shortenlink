@@ -107,7 +107,7 @@ public class ClickServiceImpl implements ClickService {
     @Override
     public ClickStats getClickStats(String urlCode) {
         UrlShortening urlShortening = urlShorteningRepository.findByUrlCode(urlCode)
-                .orElseThrow(() -> new EntityNotFoundException("URL not found with code: " + urlCode));
+                .orElseThrow(() -> new EntityNotFoundException("URL isn't found with code: " + urlCode));
 
         UUID urlId = urlShortening.getId();
 
