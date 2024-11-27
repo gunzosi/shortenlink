@@ -1,6 +1,7 @@
 package boostech.code.service.serviceImpl;
 
 import boostech.code.component.AuthenticationFacade;
+import boostech.code.dto.UrlShorteningDTO;
 import boostech.code.exception.ResourceNotFoundException;
 import boostech.code.exception.UnauthorizedAccessException;
 import boostech.code.models.UrlShortening;
@@ -14,6 +15,9 @@ import boostech.code.service.UrlShorteningService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +25,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -190,6 +195,8 @@ public class UrlShorteningServiceImpl implements UrlShorteningService {
         return new UrlResponse("Success", urlUuid.get().toString(), (List<?>) null);
     }
 
+
+
     @Override
     public UUID getUUIDByUrlCode(String urlCode) {
         return urlShorteningRepository.findUuidByUrlCode(urlCode)
@@ -197,6 +204,36 @@ public class UrlShorteningServiceImpl implements UrlShorteningService {
     }
 
     // Update
+
+    @Override
+    @Transactional
+    public UrlResponse updateUrlCodeV2(String oldUrlCode, UrlRequestUpdate urlRequestUpdate) {
+        Long currentUserId = authenticationFacade.getCurrentUserId();
+
+        UrlShortening urlShortening = urlShorteningRepository.findByUrlCodeAndUser_Id(oldUrlCode, currentUserId)
+                .orElseThrow(() -> new UnauthorizedAccessException("URL không tìm th?y ho?c b?n không ???c phép c?p nh?t"));
+
+        String newUrlCode = urlRequestUpdate.getCustomUrlCode();
+
+
+        Optional<UrlShortening> existingUrl = urlShorteningRepository.findByUrlCode(newUrlCode);
+        if (existingUrl.isPresent() && !existingUrl.get().getId().equals(urlShortening.getId())) {
+            return new UrlResponse("Error", "Mã URL is exist", (List<?>) null);
+        }
+
+
+        urlShortening.setUrlCode(newUrlCode);
+        urlShortening.setShortUrl(localUrl + newUrlCode);
+
+        UrlShortening updatedUrl = urlShorteningRepository.save(urlShortening);
+
+        return new UrlResponse(
+                "Success",
+                "Update URL code thành công",
+                Collections.singletonList(updatedUrl)
+        );
+    }
+
 
     @Override
     public UrlResponse checkUrlCodeAvailability(String urlCode) {
@@ -226,6 +263,90 @@ public class UrlShorteningServiceImpl implements UrlShorteningService {
                 "Success",
                 "Valid custom path, you can use it",
                 (List<?>) null);
+    }
+
+//    @Override
+//    public UrlResponse getUserUrls() {
+//        Long currentUserId = authenticationFacade.getCurrentUserId();
+//        List<UrlShortening> userUrls = urlShorteningRepository.findByUser_Id(currentUserId);
+//
+//        if (userUrls.isEmpty()) {
+//            return new UrlResponse(
+//                    "Error",
+//                    "No URLs found for the current user",
+//                    (List<?>) null
+//            );
+//        }
+//
+//        return new UrlResponse(
+//                "Success",
+//                "User URLs retrieved successfully",
+//                userUrls
+//        );
+//    }
+
+    @Override
+    public UrlResponse getUserUrls() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentUsername = authentication.getName();
+
+        User currentUser = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        List<UrlShortening> userUrls = urlShorteningRepository.findByUser(currentUser);
+
+        List<UrlShorteningDTO> urlDTOs = userUrls.stream()
+                .map(url -> new UrlShorteningDTO(
+                        url.getId(),
+                        url.getLongUrl(),
+                        url.getShortUrl(),
+                        url.getUrlCode(),
+                        url.getCreatedAt()
+                ))
+                .collect(Collectors.toList());
+
+        return new UrlResponse("Success", "User URLs retrieved", urlDTOs);
+    }
+
+    @Override
+    public UrlResponse getUserUrlsById(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+        Long currentUserId = authenticationFacade.getCurrentUserId();
+        if (!currentUserId.equals(userId)) {
+            UserDetailsImpl currentUser = authenticationFacade.getCurrentUser();
+            boolean isAdmin = currentUser.getAuthorities().stream()
+                    .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
+
+            if (!isAdmin) {
+                throw new UnauthorizedAccessException("You aren't authorized to view this user's URLs");
+            }
+        }
+
+        List<UrlShortening> userUrls = urlShorteningRepository.findByUser_Id(userId);
+
+        if (userUrls.isEmpty()) {
+            return new UrlResponse(
+                    "Error",
+                    "No URLs found for the user",
+                    (List<?>) null
+            );
+        }
+
+        return new UrlResponse(
+                "Success",
+                "User URLs retrieved successfully",
+                userUrls
+        );
+    }
+
+    @Override
+    public User findUserByUrlCode(String urlCode) {
+        UrlShortening urlShortening = urlShorteningRepository.findByUrlCode(urlCode)
+                .orElseThrow(() -> new ResourceNotFoundException("URL isn't found with code: " + urlCode));
+
+        return urlShortening.getUser();
     }
 
     private boolean isValidUrlCode(String urlCode) {

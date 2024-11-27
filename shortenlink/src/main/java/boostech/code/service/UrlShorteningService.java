@@ -1,6 +1,7 @@
 package boostech.code.service;
 
 import boostech.code.models.UrlShortening;
+import boostech.code.models.User;
 import boostech.code.payload.request.UrlRequest;
 import boostech.code.payload.request.UrlRequestUpdate;
 import boostech.code.payload.response.UrlResponse;
@@ -28,4 +29,10 @@ public interface UrlShorteningService {
     UUID getUUIDByUrlCode(String urlCode);
 
     UrlResponse checkUrlCodeAvailability(String urlCode);
+    UrlResponse getUserUrls();
+    UrlResponse getUserUrlsById(Long userId);
+    User findUserByUrlCode(String urlCode);
+
+    // UpdateV2
+    UrlResponse updateUrlCodeV2(String oldUrlCode, UrlRequestUpdate urlRequestUpdate);
 }

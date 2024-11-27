@@ -1,6 +1,7 @@
 package boostech.code.repository;
 
 import boostech.code.models.UrlShortening;
+import boostech.code.models.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -59,6 +60,8 @@ public interface UrlShorteningRepository extends JpaRepository<UrlShortening, UU
 
     Optional<UrlShortening> findByUrlCodeAndUser_Id(String urlCode, Long userId);
     List<UrlShortening> findByUser_Id(Long userId);
+    List<UrlShortening> findByUser(User user);
+
 
 
 }

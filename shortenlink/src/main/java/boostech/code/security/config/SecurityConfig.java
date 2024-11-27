@@ -41,26 +41,31 @@ public class SecurityConfig {
         this.unauthorizedHandler = unauthorizedHandler;
     }
 
-@Bean
-public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-    http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .csrf(AbstractHttpConfigurer::disable)
-            .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                    .requestMatchers("/api/v1/auth/signup", "/api/v1/auth/signin").permitAll()
-                    .requestMatchers("/api/test/all").permitAll()
-                    .requestMatchers("/api/test/admin").hasRole("ADMIN")
-                    .requestMatchers("/**").permitAll()
-                    .anyRequest().authenticated()
-            );
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                "/api/v1/getAll",
+                                "/{urlCode}",
+                                "/api/v1/auth/**",
+                                "/api/test/all"
+                        ).permitAll()
+                        .anyRequest().authenticated()
 
-    http.authenticationProvider(authenticationProvider());
-    http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
+                )
+                .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
+                .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> response.sendRedirect("/api/v1/auth/login")));
 
-    return http.build();
-}
+        http.authenticationProvider(authenticationProvider());
+        http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
+    }
+
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
@@ -82,8 +87,6 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
-
-
 
     @Bean
     public AuthTokenFilter authenticationJwtTokenFilter() {

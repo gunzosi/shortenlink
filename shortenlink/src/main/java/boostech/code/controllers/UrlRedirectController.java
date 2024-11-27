@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 
+// 100% free access from source , dont need JWT token
 @RestController
 @RequestMapping("/")
 public class UrlRedirectController {
@@ -60,4 +61,6 @@ public class UrlRedirectController {
 
         return new ResponseEntity<>(headers, HttpStatus.FOUND);
     }
+
+
 }
