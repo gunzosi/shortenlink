@@ -41,7 +41,7 @@ public class UrlRedirectController {
             HttpServletRequest request) {
 
         UrlShortening urlShortening = urlShorteningService.getLongUrlByCode(urlCode)
-                .orElseThrow(() -> new EntityNotFoundException("URL not found with code: " + urlCode));
+                .orElseThrow(() -> new EntityNotFoundException("URL isn't found with code: " + urlCode));
 
         String longUrl = urlShortening.getLongUrl();
 
