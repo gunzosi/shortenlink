@@ -3,6 +3,7 @@ package boostech.code.service;
 import boostech.code.dto.AdvertisementDTO;
 import boostech.code.models.Advertisement;
 import boostech.code.models.AdvertisementImage;
+import boostech.code.payload.response.UrlAdvertisementRes;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -22,4 +23,5 @@ public interface AdvertisementService {
                                       List<MultipartFile> images);
     void deleteAdvertisement(UUID urlId);
     List<AdvertisementImage> getImagesByAdvertisementId(UUID advertisementId);
+    UrlAdvertisementRes getUrlAdvertisement(UUID urlId);
 }

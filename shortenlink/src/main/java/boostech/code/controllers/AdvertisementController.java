@@ -1,9 +1,11 @@
 package boostech.code.controllers;
 
 import boostech.code.dto.AdvertisementDTO;
+import boostech.code.payload.response.UrlAdvertisementRes;
 import boostech.code.service.AdvertisementService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -74,4 +76,20 @@ public class AdvertisementController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    @GetMapping("/adv/{urlId}/details")
+    public ResponseEntity<?> getUrlAdvertisement(@PathVariable UUID urlId) {
+        try {
+            UrlAdvertisementRes response = advertisementService.getUrlAdvertisement(urlId);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Unexpected error occurred.");
+        }
+    }
+
 }

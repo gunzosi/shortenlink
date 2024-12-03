@@ -4,6 +4,7 @@ import boostech.code.dto.AdvertisementDTO;
 import boostech.code.models.Advertisement;
 import boostech.code.models.AdvertisementImage;
 import boostech.code.models.UrlShortening;
+import boostech.code.payload.response.UrlAdvertisementRes;
 import boostech.code.repository.AdvertisementImageRepository;
 import boostech.code.repository.AdvertisementRepository;
 import boostech.code.repository.UrlShorteningRepository;
@@ -160,4 +161,35 @@ public class AdvertisementServiceImpl implements AdvertisementService {
     public List<AdvertisementImage> getImagesByAdvertisementId(UUID advertisementId) {
         return advertisementImageRepository.findByAdvertisement_Id(advertisementId);
     }
+
+    @Override
+    public UrlAdvertisementRes getUrlAdvertisement(UUID urlId) {
+        List<Object[]> results = advertisementRepository.findAdvertisementDetailsByUrlId(urlId);
+
+        if (results.isEmpty()) {
+            throw new IllegalArgumentException("The URL doesn't exist or has no advertisements.");
+        }
+
+        Object[] firstRow = results.getFirst();
+
+        List<String> imageFilenames = results.stream()
+                .map(row -> (String) row[6])
+                .toList();
+
+        List<String> imagePaths = results.stream()
+                .map(row -> (String) row[7])
+                .toList();
+
+        return new UrlAdvertisementRes(
+                (UUID) firstRow[0],
+                (String) firstRow[1],
+                (String) firstRow[2],               // shortUrl
+                (String) firstRow[3],               // urlCode
+                (String) firstRow[4],               // textContent
+                (Integer) firstRow[5],              // countdownDuration
+                imageFilenames,                     // image filenames
+                imagePaths                          // image paths
+        );
+    }
+
 }
