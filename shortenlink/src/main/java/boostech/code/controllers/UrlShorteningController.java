@@ -33,6 +33,10 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1")
+@CrossOrigin(origins = "http://localhost:3000",
+        methods = {
+        RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE},
+allowedHeaders = "*", maxAge = 840000)
 public class UrlShorteningController {
     private final UrlShorteningService urlShorteningService;
     private final ClickService clickService;
@@ -122,7 +126,6 @@ public class UrlShorteningController {
     }
 
 
-    // DELETE URL - phai dang nhap moi duoc su dung
     @DeleteMapping("/{urlCode}")
     public ResponseEntity<UrlResponse> deleteUrl(@PathVariable String urlCode) {
         urlShorteningService.deleteUrl(urlCode);

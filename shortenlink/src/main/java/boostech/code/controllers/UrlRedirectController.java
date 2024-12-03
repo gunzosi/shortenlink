@@ -4,7 +4,6 @@ import boostech.code.models.UrlShortening;
 import boostech.code.payload.request.RequestInfo;
 import boostech.code.service.ClickService;
 import boostech.code.service.UrlShorteningService;
-import boostech.code.payload.request.RequestInfo;
 import boostech.code.utils.RequestInfoHandler;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 
-// 100% free access from source , dont need JWT token
+// 100% free access from source, no JWT token needed
 @RestController
 @RequestMapping("/")
 public class UrlRedirectController {
@@ -36,12 +35,13 @@ public class UrlRedirectController {
     }
 
     @GetMapping("/{urlCode}")
-    public ResponseEntity<Void> redirectUrl(
+    public ResponseEntity<?> redirectUrl(
             @PathVariable String urlCode,
+            @RequestHeader(value = "Password", required = false) String password, 
             HttpServletRequest request) {
 
         UrlShortening urlShortening = urlShorteningService.getLongUrlByCode(urlCode)
-                .orElseThrow(() -> new EntityNotFoundException("Don't find the URL with: " + urlCode));
+                .orElseThrow(() -> new EntityNotFoundException("URL not found with code: " + urlCode));
 
         String longUrl = urlShortening.getLongUrl();
 
@@ -56,11 +56,18 @@ public class UrlRedirectController {
                 requestInfo.getReferer()
         );
 
+        if (urlShortening.isPasswordProtected()) {
+            // If a password isn't provided or incorrect, return 401 Unauthorized
+            if (password == null || !password.equals(urlShortening.getPassword())) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body("This URL is password-protected. Please provide a valid password.");
+            }
+        }
+
+        // Redirect to the long URL
         HttpHeaders headers = new HttpHeaders();
         headers.setLocation(URI.create(longUrl));
-
         return new ResponseEntity<>(headers, HttpStatus.FOUND);
     }
-
 
 }

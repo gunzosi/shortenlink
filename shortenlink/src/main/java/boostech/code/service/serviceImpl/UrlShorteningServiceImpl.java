@@ -6,9 +6,12 @@ import boostech.code.exception.ResourceNotFoundException;
 import boostech.code.exception.UnauthorizedAccessException;
 import boostech.code.models.UrlShortening;
 import boostech.code.models.User;
+import boostech.code.payload.request.UrlProtected;
 import boostech.code.payload.request.UrlRequest;
 import boostech.code.payload.request.UrlRequestUpdate;
+import boostech.code.payload.response.ApiResponse;
 import boostech.code.payload.response.UrlResponse;
+import boostech.code.payload.response.UrlResponseDTO;
 import boostech.code.repository.UrlShorteningRepository;
 import boostech.code.repository.UserRepository;
 import boostech.code.service.UrlShorteningService;
@@ -131,7 +134,6 @@ public class UrlShorteningServiceImpl implements UrlShorteningService {
     public void deleteUrl(String urlCode) {
         Long currentUserId = authenticationFacade.getCurrentUserId();
 
-        // Tìm và xóa URL
         UrlShortening urlShortening = urlShorteningRepository.findByUrlCodeAndUser_Id(urlCode, currentUserId)
                 .orElseThrow(() -> new UnauthorizedAccessException("URL isn't found or not authorized"));
 
@@ -211,14 +213,14 @@ public class UrlShorteningServiceImpl implements UrlShorteningService {
         Long currentUserId = authenticationFacade.getCurrentUserId();
 
         UrlShortening urlShortening = urlShorteningRepository.findByUrlCodeAndUser_Id(oldUrlCode, currentUserId)
-                .orElseThrow(() -> new UnauthorizedAccessException("URL không tìm th?y ho?c b?n không ???c phép c?p nh?t"));
+                .orElseThrow(() -> new UnauthorizedAccessException("URL not found or not authorized"));
 
         String newUrlCode = urlRequestUpdate.getCustomUrlCode();
 
 
         Optional<UrlShortening> existingUrl = urlShorteningRepository.findByUrlCode(newUrlCode);
         if (existingUrl.isPresent() && !existingUrl.get().getId().equals(urlShortening.getId())) {
-            return new UrlResponse("Error", "Mã URL is exist", (List<?>) null);
+            return new UrlResponse("Error", "URL code is not exist", (List<?>) null);
         }
 
 
@@ -229,10 +231,98 @@ public class UrlShorteningServiceImpl implements UrlShorteningService {
 
         return new UrlResponse(
                 "Success",
-                "Update URL code thành công",
+                "Update URL successfully",
                 Collections.singletonList(updatedUrl)
         );
     }
+
+    @Override
+    public ApiResponse<UrlResponseDTO> createPasswordProtectedShortUrl(UrlProtected urlRequestProtected) {
+        Long currentUserId = authenticationFacade.getCurrentUserId();
+
+        UrlShortening urlShortening = urlShorteningRepository.findByUrlCodeAndUser_Id(urlRequestProtected.getUrlCode(), currentUserId)
+                .orElseThrow(() -> new UnauthorizedAccessException("URL isn't found or not authorized"));
+
+        if (urlShortening.isPasswordProtected()) {
+            return new ApiResponse<>("Error", "URL is already password protected");
+        }
+
+        urlShortening.setPassword(urlRequestProtected.getPassword());
+        urlShortening.setPasswordProtected(true);
+        urlShorteningRepository.save(urlShortening);
+
+        UrlResponseDTO responseDTO = new UrlResponseDTO(
+                urlShortening.getUrlCode(),
+                urlShortening.getLongUrl(),
+                urlShortening.isPasswordProtected()
+        );
+
+        return new ApiResponse<>("Success", "URL is now password protected", responseDTO);
+    }
+
+    @Override
+    public ApiResponse<String> validatePasswordProtectedShortUrl(String urlCode, String password) {
+        UrlShortening urlShortening = urlShorteningRepository.findByUrlCode(urlCode)
+                .orElseThrow(() -> new ResourceNotFoundException("URL not found"));
+
+        if (urlShortening.isPasswordProtected()) {
+            if (urlShortening.getPassword().equals(password)) {
+                return new ApiResponse<>("Success", "Password is correct", urlShortening.getLongUrl());
+            } else {
+                return new ApiResponse<>("Error", "Password is incorrect", null);
+            }
+        } else {
+            return new ApiResponse<>("Error", "URL isn't password protected", null);
+        }
+    }
+
+    @Override
+    public ApiResponse<UrlResponseDTO> updatePasswordProtectedShortUrl(String urlCode, String newPassword) {
+        Long currentUserId = authenticationFacade.getCurrentUserId();
+
+        UrlShortening urlShortening = urlShorteningRepository.findByUrlCodeAndUser_Id(urlCode, currentUserId)
+                .orElseThrow(() -> new UnauthorizedAccessException("URL not found or not authorized"));
+
+        if (!urlShortening.isPasswordProtected()) {
+            return new ApiResponse<>("Error", "URL is not password-protected");
+        }
+
+        urlShortening.setPassword(newPassword);
+        urlShorteningRepository.save(urlShortening);
+
+        UrlResponseDTO responseDTO = new UrlResponseDTO(
+                urlShortening.getUrlCode(),
+                urlShortening.getLongUrl(),
+                urlShortening.isPasswordProtected()
+        );
+
+        return new ApiResponse<>("Success", "Password updated successfully", responseDTO);
+    }
+
+    @Override
+    public ApiResponse<UrlResponseDTO> deletePasswordProtectedShortUrl(String urlCode) {
+        Long currentUserId = authenticationFacade.getCurrentUserId();
+
+        UrlShortening urlShortening = urlShorteningRepository.findByUrlCodeAndUser_Id(urlCode, currentUserId)
+                .orElseThrow(() -> new UnauthorizedAccessException("URL not found or not authorized"));
+
+        if (!urlShortening.isPasswordProtected()) {
+            return new ApiResponse<>("Error", "URL is not password-protected");
+        }
+
+        urlShortening.setPasswordProtected(false);
+        urlShortening.setPassword(null);
+        urlShorteningRepository.save(urlShortening);
+
+        UrlResponseDTO responseDTO = new UrlResponseDTO(
+                urlShortening.getUrlCode(),
+                urlShortening.getLongUrl(),
+                urlShortening.isPasswordProtected()
+        );
+
+        return new ApiResponse<>("Success", "Password protection removed from URL", responseDTO);
+    }
+
 
 
     @Override

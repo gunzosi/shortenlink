@@ -40,6 +40,12 @@ public class UrlShortening {
     @Column(name = "url_code", nullable = false, length = Integer.MAX_VALUE)
     private String urlCode;
 
+    @Column(name = "password", nullable = true, length = Integer.MAX_VALUE)
+    private String password;
+
+    @Column(name = "is_password_protected", nullable = false)
+    private boolean isPasswordProtected;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = OffsetDateTime.now();
@@ -54,5 +60,13 @@ public class UrlShortening {
     public String randomUniqueUrlCode() {
         int codeLength = (int) (Math.random() * 3) + 6;
         return UUID.randomUUID().toString().replace("-", "").substring(0, codeLength);
+    }
+
+    public void setPasswordProtected(boolean isPasswordProtected) {
+        this.isPasswordProtected = isPasswordProtected;
+    }
+
+    public boolean isPasswordProtected() {
+        return isPasswordProtected;
     }
 }

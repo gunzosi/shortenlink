@@ -2,9 +2,12 @@ package boostech.code.service;
 
 import boostech.code.models.UrlShortening;
 import boostech.code.models.User;
+import boostech.code.payload.request.UrlProtected;
 import boostech.code.payload.request.UrlRequest;
 import boostech.code.payload.request.UrlRequestUpdate;
+import boostech.code.payload.response.ApiResponse;
 import boostech.code.payload.response.UrlResponse;
+import boostech.code.payload.response.UrlResponseDTO;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -35,4 +38,10 @@ public interface UrlShorteningService {
 
     // UpdateV2
     UrlResponse updateUrlCodeV2(String oldUrlCode, UrlRequestUpdate urlRequestUpdate);
+
+    // Validate Password Protected Short URL to redirect to long URL
+    ApiResponse<UrlResponseDTO> createPasswordProtectedShortUrl(UrlProtected urlRequestProtected);
+    ApiResponse<String> validatePasswordProtectedShortUrl(String urlCode, String password);
+    ApiResponse<UrlResponseDTO> updatePasswordProtectedShortUrl(String urlCode, String password);
+    ApiResponse<UrlResponseDTO> deletePasswordProtectedShortUrl(String urlCode);
 }

@@ -57,8 +57,8 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
 
                 )
-                .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
-                .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> response.sendRedirect("/api/v1/auth/login")));
+                .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler));
+//                .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> response.sendRedirect("/api/v1/auth/login")));
 
         http.authenticationProvider(authenticationProvider());
         http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
@@ -72,6 +72,7 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of(frontEndUrl));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowedHeaders(Arrays.asList(
                 "Content-Type",
                 "Authorization",
