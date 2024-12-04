@@ -21,9 +21,10 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/advertisements")
+@RequestMapping("/api/v1/advertisements")
 @RequiredArgsConstructor
 public class AdvertisementController {
+    @Autowired
     private final AdvertisementService advertisementService;
 
     @PostMapping("/{urlId}")

@@ -44,4 +44,6 @@ public interface UrlShorteningService {
     ApiResponse<String> validatePasswordProtectedShortUrl(String urlCode, String password);
     ApiResponse<UrlResponseDTO> updatePasswordProtectedShortUrl(String urlCode, String password);
     ApiResponse<UrlResponseDTO> deletePasswordProtectedShortUrl(String urlCode);
+
+    boolean isUrlProtected(String urlCode);
 }

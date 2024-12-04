@@ -39,7 +39,7 @@ public class AdvertisementServiceImpl implements AdvertisementService {
             List<MultipartFile> images
     ) {
         UrlShortening url = urlShorteningRepository.findById(urlId)
-                .orElseThrow(() -> new IllegalArgumentException("URL does not exist."));
+                .orElseThrow(() -> new IllegalArgumentException("URL doesn't exist."));
 
         Advertisement advertisement = new Advertisement();
         advertisement.setId(UUID.randomUUID());
@@ -183,12 +183,12 @@ public class AdvertisementServiceImpl implements AdvertisementService {
         return new UrlAdvertisementRes(
                 (UUID) firstRow[0],
                 (String) firstRow[1],
-                (String) firstRow[2],               // shortUrl
-                (String) firstRow[3],               // urlCode
-                (String) firstRow[4],               // textContent
-                (Integer) firstRow[5],              // countdownDuration
-                imageFilenames,                     // image filenames
-                imagePaths                          // image paths
+                (String) firstRow[2],
+                (String) firstRow[3],
+                (String) firstRow[4],
+                (Integer) firstRow[5],
+                imageFilenames,
+                imagePaths
         );
     }
 

@@ -172,5 +172,18 @@ public class ClickServiceImpl implements ClickService {
         return stats;
     }
 
+    @Override
+    public void logClick(UrlShortening urlShortening, RequestInfo requestInfo) {
+        ClickEvent clickEvent = new ClickEvent();
+        clickEvent.setUrlShortening(urlShortening);
+
+        if (requestInfo != null) {
+            clickEvent.setCountry(requestInfo.getCountry());
+            clickEvent.setCity(requestInfo.getCity());
+        }
+
+        clickRepository.save(clickEvent);
+    }
+
 
 }

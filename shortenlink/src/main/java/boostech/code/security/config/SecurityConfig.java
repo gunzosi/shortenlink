@@ -54,6 +54,7 @@ public class SecurityConfig {
                                 "/api/v1/auth/**",
                                 "/api/test/all"
                         ).permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/urls/validate-url").permitAll()
                         .anyRequest().authenticated()
 
                 )

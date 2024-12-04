@@ -74,7 +74,7 @@ public class RequestInfoHandler {
         return requestInfo;
     }
 
-    private String getClientIpAddress(HttpServletRequest request) {
+    public String getClientIpAddress(HttpServletRequest request) {
         return IP_HEADERS.stream()
                 .map(request::getHeader)
                 .filter(ip -> ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase(ip))
@@ -83,7 +83,7 @@ public class RequestInfoHandler {
                 .orElseGet(request::getRemoteAddr);
     }
 
-    private UserAgent getUserAgent(HttpServletRequest request) {
+    public UserAgent getUserAgent(HttpServletRequest request) {
         String userAgentString = request.getHeader("User-Agent");
         if (userAgentString == null || userAgentString.isEmpty()) {
             logger.warn("User-Agent header is missing or empty");
@@ -93,8 +93,10 @@ public class RequestInfoHandler {
     }
 
 
-    private String getReferer(HttpServletRequest request) {
+    public String getReferer(HttpServletRequest request) {
         String referer = request.getHeader("Referer");
         return referer != null ? referer : "direct";
     }
+
+
 }

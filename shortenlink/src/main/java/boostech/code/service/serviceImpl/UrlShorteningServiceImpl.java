@@ -276,6 +276,7 @@ public class UrlShorteningServiceImpl implements UrlShorteningService {
         }
     }
 
+
     @Override
     public ApiResponse<UrlResponseDTO> updatePasswordProtectedShortUrl(String urlCode, String newPassword) {
         Long currentUserId = authenticationFacade.getCurrentUserId();
@@ -323,6 +324,13 @@ public class UrlShorteningServiceImpl implements UrlShorteningService {
         return new ApiResponse<>("Success", "Password protection removed from URL", responseDTO);
     }
 
+    @Override
+    public boolean isUrlProtected(String urlCode) {
+        UrlShortening urlShortening = urlShorteningRepository.findByUrlCode(urlCode)
+                .orElseThrow(() -> new ResourceNotFoundException("URL not found"));
+
+        return urlShortening.isPasswordProtected();
+    }
 
 
     @Override
